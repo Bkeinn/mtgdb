@@ -45,6 +45,14 @@ fn main() -> Result<()> {
                 println!("{} with ID {}", list.name, list.id);
             }
         }
+        Commands::Info { card } => {
+            println!("{} in:", &card);
+            let vec = vec![card];
+            let query = &card::CardQuery::names(vec, &conn)[0];
+            for card in &query.cards {
+                println!("\t{} is deck = {}", card.list.name, card.list.deck);
+            }
+        }
         _ => todo!(),
     }
 
