@@ -1,3 +1,4 @@
+use chrono::Utc;
 use core::panic;
 
 use anyhow::{Context, Result};
@@ -90,6 +91,13 @@ impl Card {
         println!("Cards: {:#?}", &result);
         return result;
     }
+    pub fn move_to_list(card: &Card, list: &List, conn: &Connection) -> Result<()> {
+        conn.execute(
+            "UPDATE cards SET list = (?1) WHERE _id = (?2)",
+            (list.id, card.id),
+        )?;
+        Ok(())
+    }
 }
 
 impl Data_cards {
@@ -141,6 +149,16 @@ impl List {
         let deck = deck(&name);
         List { deck, name, id }
     }
+    pub fn by_name(name: String, conn: &Connection) -> List {
+        let mut query = conn
+            .prepare("SELECT _id FROM 'lists' WHERE name = (?1)")
+            .unwrap();
+        if let Some(row) = query.query(params![name]).unwrap().next().unwrap() {
+            return List::new(name, row.get(0).unwrap());
+        }
+        panic!("This List name does not exist");
+    }
+
     fn by_id(id: u64, conn: &Connection) -> List {
         let mut query = conn
             .prepare("SELECT name FROM 'lists' Where _id = (?1)")

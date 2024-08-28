@@ -1,5 +1,7 @@
+use card::{Card, CardQuery, List};
 use clap::{Parser, Subcommand};
 use rusqlite::{Connection, Result};
+use std::io;
 
 mod card;
 
@@ -52,6 +54,53 @@ fn main() -> Result<()> {
             for card in &query.cards {
                 println!("\t{} is deck = {}", card.list.name, card.list.deck);
             }
+        }
+        Commands::Move { card, list } => {
+            let vec = vec![card];
+            let cardquery = &card::CardQuery::names(vec, &conn)[0];
+            let list = List::by_name(list, &conn);
+            let mut selected_card = None;
+            for card in &cardquery.cards {
+                if !card.list.deck {
+                    selected_card = Some(card);
+                    break;
+                }
+            }
+            let selected_card = match selected_card {
+                Some(card) => card,
+                None => {
+                    println!("All versions of this card are allready in decks, whitch one would you like to move");
+                    let mut card = None;
+                    loop {
+                        for (num, card) in cardquery.cards.iter().enumerate() {
+                            println!("{}\t{}", num, card.list.name);
+                        }
+                        let mut input = String::new();
+                        if io::stdin().read_line(&mut input).is_err() {
+                            println!("This isn't a valid input");
+                            continue;
+                        }
+                        let number: usize = match input.trim().parse() {
+                            Ok(num) => num,
+                            Err(_) => {
+                                println!("This isn't a valid input");
+                                continue;
+                            }
+                        };
+                        card = Some(match cardquery.cards.get(number) {
+                            Some(card) => card,
+                            None => {
+                                println!("This isn't a valid input");
+                                continue;
+                            }
+                        });
+                        break;
+                    }
+                    card.unwrap()
+                }
+            };
+            Card::move_to_list(selected_card, &list, &conn)
+                .expect("Card could not be moved to list");
         }
         _ => todo!(),
     }
