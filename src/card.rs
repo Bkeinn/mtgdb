@@ -149,6 +149,17 @@ impl List {
         let deck = deck(&name);
         List { deck, name, id }
     }
+    pub fn create_list(name: String, conn: &Connection) -> Result<()> {
+        let creation_timestamp = Utc::now().timestamp();
+
+        conn.execute(
+            "INSERT INTO lists (background, category, name, creation, tab, uuid, note) 
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![-1, 1, name, creation_timestamp, 0, "0", "0"],
+        )?;
+
+        Ok(())
+    }
     pub fn by_name(name: String, conn: &Connection) -> List {
         let mut query = conn
             .prepare("SELECT _id FROM 'lists' WHERE name = (?1)")
@@ -190,5 +201,5 @@ impl List {
 }
 
 fn deck(s: &str) -> bool {
-    s.starts_with("Deck")
+    s.starts_with("Deck_")
 }

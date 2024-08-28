@@ -102,6 +102,9 @@ fn main() -> Result<()> {
             Card::move_to_list(selected_card, &list, &conn)
                 .expect("Card could not be moved to list");
         }
+        Commands::New { list } => {
+            List::create_list(String::from("Deck_") + &list, &conn).unwrap();
+        }
         _ => todo!(),
     }
 
